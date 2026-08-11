@@ -14,10 +14,189 @@ datasource db {
 }
 
 model User {
+  id            String      @id @default(uuid())
+  name          String?
+  email         String      @unique
+  emailVerified Boolean     @default(false)
+  image         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  Workspaces    Workspace[]
+}
+
+model Session {
   id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  password  String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  token     String
+  ipAddress String?
+  userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  expiresAt DateTime
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  idToken               String?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Workspace {
+  id            String         @id @default(uuid())
+  userId        String
+  title         String
+  description   String?
+  icon          String?
+  defaultModel  String         @default("gpt-4o-mini")
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sources       Source[]
+  conversations Conversation[]
+  artifacts     Artifact[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([userId])
+  @@map("workspace")
+}
+
+enum SourceType {
+  PDF
+  WEBSITE
+  YOUTUBE
+  TEXT
+  MARKDOWN
+}
+
+enum SourceStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+model Source {
+  id          String        @id @default(uuid())
+  workspaceId String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  title       String
+  content     String?
+  url         String?
+  type        SourceType
+  status      SourceStatus  @default(PENDING)
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  chunks      SourceChunk[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, type])
+  @@index([workspaceId, status])
+  @@map("source")
+}
+
+model SourceChunk {
+  id         String   @id @default(uuid())
+  sourceId   String
+  index      Int
+  content    String
+  tokenCount Int?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  source     Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, index])
+  @@index([sourceId])
+  @@map("source_chunk")
+}
+
+enum messageRole {
+  USER
+  ASSISTANT
+}
+
+model Conversation {
+  id                  String    @id @default(uuid())
+  workspaceId         String
+  workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages            Message[]
+  title               String?
+  summary             String?
+  summaryMessageCount Int       @default(0)
+  summarizedAt        DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, updatedAt])
+  @@map("conversation")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           messageRole
+  content        String
+  citations      Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
+  @@map("message")
+}
+
+enum ArtifactType {
+  SUMMARY
+  TAKEAWAYS
+  FLASHCARDS
+  QUIZ
+  MINDMAP
+  REPORT
+}
+
+enum ArtifactStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+model LearningArtifact {
+  id          String         @id @default(uuid())
+  workspaceId String
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  title       String
+  type        ArtifactType
+  status      ArtifactStatus @default(PENDING)
+  sourcesId   String[]
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, type])
+  @@index([workspaceId, status])
+  @@map("learning_artifact")
 }
