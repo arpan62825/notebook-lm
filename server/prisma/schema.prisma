@@ -63,18 +63,18 @@ model Account {
 }
 
 model Workspace {
-  id            String         @id @default(uuid())
+  id            String             @id @default(uuid())
   userId        String
   title         String
   description   String?
   icon          String?
-  defaultModel  String         @default("gpt-4o-mini")
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultModel  String             @default("gpt-4o-mini")
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   sources       Source[]
   conversations Conversation[]
-  artifacts     Artifact[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  artifacts     LearningArtifact[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   @@index([userId])
   @@map("workspace")
