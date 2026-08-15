@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.ts";
+import { registerRoutes } from "./routes/index.ts";
+import { errorHandler } from "./middleware/error-handler.middleware.ts";
 
 dotenv.config();
 const app = express();
@@ -18,6 +20,9 @@ app.use(
 );
 
 app.use(express.json());
+
+registerRoutes(app);
+app.use(errorHandler);
 
 app.listen(process.env.PORT || 8081, () => {
   console.log(`Server is running on port ${process.env.PORT || 8081}`);

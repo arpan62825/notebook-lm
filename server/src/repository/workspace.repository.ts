@@ -68,7 +68,12 @@ export function updateWorkspaceRecord(
 }
 
 export async function deleteWorkspaceRecord(workspaceId: string) {
-  await prisma.workspace.delete({
-    where: { id: workspaceId },
-  });
+  try {
+    await prisma.workspace.delete({
+      where: { id: workspaceId },
+    });
+  } catch (error) {
+    console.error(`Failed to delete workspace record ${workspaceId}`, error);
+    throw error;
+  }
 }
