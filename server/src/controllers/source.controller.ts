@@ -10,7 +10,10 @@ import {
   workspaceIdParamSchema,
 } from "../validators/source.validator.js";
 
-import { listSourcesForWorkspace } from "../services/source.service.js";
+import {
+  getSourceForWorkspace,
+  listSourcesForWorkspace,
+} from "../services/source.service.js";
 
 export const parseWorkspaceId = (params: Request["params"]) => {
   const parsed = workspaceIdParamSchema.safeParse(params);
@@ -79,8 +82,24 @@ export const listSources = async (req: Request, res: Response) => {
   const query = parseListQuery(req.query);
   const sources = await listSourcesForWorkspace(
     workspaceId,
+    req.session?.user?.id as string,
     query,
-    req.session.user.id,
   );
   res.json(sources);
 };
+
+export const getSources = async (req: Request, res: Response) => {
+  const { workspaceId, sourceId } = parseSourceParam(req.params);
+
+  const source = await getSourceForWorkspace(
+    workspaceId,
+    sourceId,
+    req.session?.user?.id as string,
+  );
+
+  res.json(source);
+};
+
+export const createAndProcessSources = async (req: Request, res: Response) => {
+  
+}
